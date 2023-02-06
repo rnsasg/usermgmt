@@ -17,28 +17,46 @@ const (
 
 type UserManagementServer struct {
 	pb.UnimplementedUserManagementServer
+	user_list *pb.UserList
+}
+
+func NewUserManagementServer() *UserManagementServer {
+	return &UserManagementServer{
+		user_list: &pb.UserList{},
+	}
 }
 
 func (s *UserManagementServer) CreateNewUser(ctx context.Context, in *pb.NewUser) (*pb.User, error) {
 	log.Printf("Receviced a reuest from %s", in.GetName())
 	var user_id int32 = int32(rand.Intn(1000))
-	return &pb.User{Name: in.GetName(), Age: in.GetAge(), Id: user_id}, nil
+	created_user := &pb.User{Name: in.GetName(), Age: in.GetAge(), Id: user_id}
+
+	s.user_list.Users = append(s.user_list.Users, created_user)
+
+	return created_user, nil
 }
 
-func main() {
+func (s *UserManagementServer) GetUsers(ctx context.Context, in *pb.GetUserParams) (*pb.UserList, error) {
+	return s.user_list, nil
+}
 
-	fmt.Println("Starting User Management Service Server")
+func (server *UserManagementServer) Run() error {
 
 	// Start Listening on port
 	lis, _ := net.Listen("tcp", port)
 
 	// Start a gRPC server
-
 	s := grpc.NewServer()
+	pb.RegisterUserManagementServer(s, server)
 
-	pb.RegisterUserManagementServer(s, &UserManagementServer{})
+	return s.Serve(lis)
+}
 
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("Failed in serving %v", err)
+func main() {
+
+	fmt.Println("Starting User Management Service Server")
+	var usr_mgmt_srv *UserManagementServer = NewUserManagementServer()
+	if err := usr_mgmt_srv.Run(); err != nil {
+		log.Fatalf("Failed to serve : %v", err)
 	}
 }

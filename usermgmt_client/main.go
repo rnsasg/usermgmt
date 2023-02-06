@@ -24,7 +24,6 @@ func main() {
 	defer conn.Close()
 
 	c := pb.NewUserManagementClient(conn)
-
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 
 	defer cancel()
@@ -35,7 +34,6 @@ func main() {
 	new_user["Kanchan"] = 30
 
 	for name, age := range new_user {
-
 		r, err := c.CreateNewUser(ctx, &pb.NewUser{Name: name, Age: age})
 		if err != nil {
 			log.Fatalf("Could not create user %v", err)
@@ -47,4 +45,12 @@ func main() {
 		Age : %d`, r.GetId(), r.GetName(), r.GetAge())
 	}
 
+	params := &pb.GetUserParams{}
+	r, err := c.GetUsers(ctx, params)
+
+	if err != nil {
+		log.Fatalf("Could not retrieve users : %v", err)
+	}
+	log.Print("\n USER LIST \n")
+	fmt.Printf("r.GetUsers(): %v \n", r.GetUsers())
 }
